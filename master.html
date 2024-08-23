@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master - Screen Share</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #202121;
+        }
+        #startButton {
+            font-size: 1.5rem;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <button id="startButton" class="btn btn-primary">Start Screen Share</button>
+
+    <script>
+        const socket = new WebSocket('ws://localhost:9090');
+        let peerConnection;
+
+        document.getElementById('startButton').addEventListener('click', startScreenShare);
+
+        async function startScreenShare() {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({video: true});
+                
+                peerConnection = new RTCPeerConnection();
+                
+                stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+                
+                peerConnection.onicecandidate = event => {
+                    if (event.candidate) {
+                        socket.send(JSON.stringify({type: 'candidate', candidate: event.candidate}));
+                    }
+                };
+                
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                socket.send(JSON.stringify({type: 'offer', offer: offer}));
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        socket.onmessage = async function(event) {
+            const message = JSON.parse(event.data);
+            if (message.type === 'answer') {
+                await peerConnection.setRemoteDescription(message.answer);
+            } else if (message.type === 'candidate') {
+                await peerConnection.addIceCandidate(message.candidate);
+            }
+        };
+    </script>
+</body>
+</html>
