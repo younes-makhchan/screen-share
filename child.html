@@ -33,7 +33,7 @@
 
     <script>
         const WEBSOCKET_URL = '{{process.env.WEBSOCKET_URL}}'||"localhost";
-        const socket = new WebSocket('ws://'+WEBSOCKET_URL+':9090');
+        const socket = new WebSocket('ws://'+140.238.165.83+':9090');
         let peerConnection;
 
         socket.onmessage = async function(event) {
