@@ -23,7 +23,8 @@
     <button id="startButton" class="btn btn-primary">Start Screen Share</button>
 
     <script>
-        const socket = new WebSocket('ws://localhost:9090');
+        const WEBSOCKET_URL = '{{process.env.WEBSOCKET_URL}}'||"localhost";
+        const socket = new WebSocket('ws://'+WEBSOCKET_URL+':9090');
         let peerConnection;
 
         document.getElementById('startButton').addEventListener('click', startScreenShare);
