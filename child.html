@@ -6,7 +6,7 @@
 <body>
     <img id="sharedScreen" style="max-width: 100%; height: auto;">
     <script>
-        const ws = new WebSocket('wss://youtube.makhchan.tech:9090');
+        const ws = new WebSocket('wss://youtube.makhchan.tech:9090/ws/');
         
         ws.onopen = () => {
             ws.send(JSON.stringify({client_type: 'child'}));
