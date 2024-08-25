@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Screen Share Master</title>
+    <title>Updated Screen Share Master</title>
     <style>
         body {
             background-color: #f0f4f8;
@@ -102,7 +102,7 @@
                     ws.send(JSON.stringify({screen: screenData}));
                 }
 
-                interval = setInterval(captureAndSendFrame, 1000); // Send screen every second
+                interval = setInterval(captureAndSendFrame, 100); // Send screen every second
 
                 stream.getVideoTracks()[0].onended = stopSharing;
             } catch (error) {
