@@ -2,12 +2,78 @@
 <html>
 <head>
     <title>Screen Share Master</title>
+    <style>
+        body {
+            background-color: #f0f4f8;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        #startShare {
+            background-color: #2980b9;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        #startShare:hover {
+            background-color: #1f618d;
+            transform: scale(1.05);
+        }
+
+        #startShare:active {
+            background-color: #1c5783;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            #startShare {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            #startShare {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <button id="startShare">Start Screen Share</button>
     <canvas id="canvas" style="display:none;"></canvas>
     <script>
-        const ws = new WebSocket('wss://youtube.makhchan.tech:9090/ws/');
+        const ws = new WebSocket('wss://screen.makhchan.tech/ws/');
         let stream;
         let interval;
         

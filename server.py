@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import json
+from aiohttp import web
 from typing import Dict, Set
 
 class ScreenShareServer:
@@ -70,11 +71,31 @@ class ScreenShareServer:
         except websockets.exceptions.ConnectionClosed:
             self.children.remove(websocket)
 
-async def main():
+
+async def handle_master_page(request):
+    with open("master.html", "r") as f:
+        return web.Response(text=f.read(), content_type='text/html')
+
+async def handle_child_page(request):
+    with open("child.html", "r") as f:
+        return web.Response(text=f.read(), content_type='text/html')
+async def start_servers():
     server = ScreenShareServer()
-    async with websockets.serve(server.handle_connection, "0.0.0.0", 9090):
-        print("Server started on ws://0.0.0.0:9090")
-        await asyncio.Future()  # run forever
+
+    # Start the WebSocket server
+    ws_server = websockets.serve(server.handle_connection, "0.0.0.0", 9090)
+
+    # Start the HTTP server
+    app = web.Application()
+    app.router.add_get('/master', handle_master_page)
+    app.router.add_get('/child', handle_child_page)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
+
+    await asyncio.gather(ws_server, site.start())
+    print("Servers started on ws://0.0.0.0:9090 and http://0.0.0.0:8080")
+    await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(start_servers())

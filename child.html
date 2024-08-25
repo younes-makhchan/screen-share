@@ -1,12 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Screen Share Viewer</title>
+    <style>
+        body {
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            flex-direction: column;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #sharedScreen {
+            max-width: 70%;
+            height: auto;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        #sharedScreen:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        #fullscreenBtn {
+            margin-top: 20px;
+            background-color: #2980b9;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        #fullscreenBtn:hover {
+            background-color: #1f618d;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            #sharedScreen {
+                max-width: 80%;
+            }
+
+            #fullscreenBtn {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            #sharedScreen {
+                max-width: 90%;
+            }
+
+            #fullscreenBtn {
+                font-size: 0.85rem;
+                padding: 6px 12px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <img id="sharedScreen" style="max-width: 100%; height: auto;">
+    <img id="sharedScreen" alt="Shared Screen">
+    <button id="fullscreenBtn">Fullscreen</button>
     <script>
-        const ws = new WebSocket('wss://youtube.makhchan.tech:9090/ws/');
+        const ws = new WebSocket('wss://screen.makhchan.tech/ws/');
+        const sharedScreen = document.getElementById('sharedScreen');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
         
         ws.onopen = () => {
             ws.send(JSON.stringify({client_type: 'child'}));
@@ -15,9 +86,43 @@
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.screen) {
-                document.getElementById('sharedScreen').src = data.screen;
+                sharedScreen.src = data.screen;
             }
         };
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                if (sharedScreen.requestFullscreen) {
+                    sharedScreen.requestFullscreen();
+                } else if (sharedScreen.mozRequestFullScreen) { // Firefox
+                    sharedScreen.mozRequestFullScreen();
+                } else if (sharedScreen.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                    sharedScreen.webkitRequestFullscreen();
+                } else if (sharedScreen.msRequestFullscreen) { // IE/Edge
+                    sharedScreen.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) { // Firefox
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { // IE/Edge
+                    document.msExitFullscreen();
+                }
+            }
+        });
+
+        // Ensure the shared screen maintains its aspect ratio in fullscreen mode
+        sharedScreen.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                sharedScreen.style.maxWidth = '100%';
+                sharedScreen.style.height = 'auto';
+            } else {
+                sharedScreen.style.maxWidth = '70%';
+            }
+        });
     </script>
 </body>
 </html>
