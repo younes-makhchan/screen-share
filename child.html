@@ -1,78 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Child - Screen Share</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #1a1a1b;
-            flex-direction: column;
-        }
-        video {
-            max-width: 80%;
-            max-height: 70vh;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        .fullscreen-btn {
-            margin-top: 10px;
-        }
-    </style>
+    <title>Screen Share Viewer</title>
 </head>
 <body>
-    <video id="sharedScreen" autoplay playsinline></video>
-    <button id="fullscreenButton" class="btn btn-secondary fullscreen-btn">Enter Fullscreen</button>
-
+    <img id="sharedScreen" style="max-width: 100%; height: auto;">
     <script>
-        const WEBSOCKET_URL = '{{process.env.WEBSOCKET_URL}}'||"localhost";
-        const socket = new WebSocket('ws://140.238.165.83:9090/ws/');
-        let peerConnection;
-
-        socket.onmessage = async function(event) {
-            const message = JSON.parse(event.data);
-            if (message.type === 'offer') {
-                peerConnection = new RTCPeerConnection();
-                
-                peerConnection.ontrack = event => {
-                    document.getElementById('sharedScreen').srcObject = event.streams[0];
-                };
-                
-                peerConnection.onicecandidate = event => {
-                    if (event.candidate) {
-                        socket.send(JSON.stringify({type: 'candidate', candidate: event.candidate}));
-                    }
-                };
-                
-                await peerConnection.setRemoteDescription(message.offer);
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                
-                socket.send(JSON.stringify({type: 'answer', answer: answer}));
-            } else if (message.type === 'candidate') {
-                await peerConnection.addIceCandidate(message.candidate);
-            }
+        const ws = new WebSocket('wss://youtube.makhchan.tech:9090');
+        
+        ws.onopen = () => {
+            ws.send(JSON.stringify({client_type: 'child'}));
         };
 
-        document.getElementById('fullscreenButton').addEventListener('click', () => {
-            const videoElement = document.getElementById('sharedScreen');
-            if (videoElement.requestFullscreen) {
-                videoElement.requestFullscreen();
-            } else if (videoElement.mozRequestFullScreen) { // Firefox
-                videoElement.mozRequestFullScreen();
-            } else if (videoElement.webkitRequestFullscreen) { // Chrome, Safari and Opera
-                videoElement.webkitRequestFullscreen();
-            } else if (videoElement.msRequestFullscreen) { // IE/Edge
-                videoElement.msRequestFullscreen();
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.screen) {
+                document.getElementById('sharedScreen').src = data.screen;
             }
-        });
+        };
     </script>
 </body>
 </html>

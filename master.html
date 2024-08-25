@@ -1,64 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master - Screen Share</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #202121;
-        }
-        #startButton {
-            font-size: 1.5rem;
-            padding: 10px 20px;
-        }
-    </style>
+    <title>Screen Share Master</title>
 </head>
 <body>
-    <button id="startButton" class="btn btn-primary">Start Screen Share</button>
-
+    <button id="startShare">Start Screen Share</button>
+    <canvas id="canvas" style="display:none;"></canvas>
     <script>
-        const socket = new WebSocket('ws://140.238.165.83:9090/ws/');
-        let peerConnection;
+        const ws = new WebSocket('wss://youtube.makhchan.tech:9090');
+        let stream;
+        let interval;
+        
+        ws.onopen = () => {
+            ws.send(JSON.stringify({client_type: 'master'}));
+        };
 
-        document.getElementById('startButton').addEventListener('click', startScreenShare);
-
-        async function startScreenShare() {
+        document.getElementById('startShare').addEventListener('click', async () => {
             try {
-                const stream = await navigator.mediaDevices.getDisplayMedia({video: true});
-                
-                peerConnection = new RTCPeerConnection();
-                
-                stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-                
-                peerConnection.onicecandidate = event => {
-                    if (event.candidate) {
-                        socket.send(JSON.stringify({type: 'candidate', candidate: event.candidate}));
-                    }
-                };
-                
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                
-                socket.send(JSON.stringify({type: 'offer', offer: offer}));
+                if (stream) {
+                    stopSharing();
+                }
+                stream = await navigator.mediaDevices.getDisplayMedia({video: true});
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+
+                const canvas = document.getElementById('canvas');
+                const context = canvas.getContext('2d');
+
+                function captureAndSendFrame() {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const screenData = canvas.toDataURL('image/jpeg', 0.7);
+                    ws.send(JSON.stringify({screen: screenData}));
+                }
+
+                interval = setInterval(captureAndSendFrame, 1000); // Send screen every second
+
+                stream.getVideoTracks()[0].onended = stopSharing;
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error starting screen share:', error);
             }
+        });
+
+        function stopSharing() {
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            console.log('Screen sharing stopped');
         }
 
-        socket.onmessage = async function(event) {
-            const message = JSON.parse(event.data);
-            if (message.type === 'answer') {
-                await peerConnection.setRemoteDescription(message.answer);
-            } else if (message.type === 'candidate') {
-                await peerConnection.addIceCandidate(message.candidate);
-            }
-        };
+        window.addEventListener('beforeunload', stopSharing);
     </script>
 </body>
 </html>
